@@ -1,65 +1,21 @@
 from flask import Flask
-from flask import jsonify
-from flask import request
+from flask_restful import Api
+from flask_jwt import JWT
+
+from security import authenticate, identity
+
+from resources.user import UserRegister
+from resources.item import Item, ItemList
 
 app = Flask(__name__)
+app.secret_key = 'secret'
+api = Api(app)
 
-stores = [
-  {
-    'name': 'My Wonderful Store',
-    'items': [
-      { 
-        'name': 'My Item', 
-        'price': 15.99
-      }
-    ]
-  }
-]
-
-@app.route('/')
-def home():
-  return "Hello, World!"
-
-@app.route('/store', methods = ['POST'])
-def create_store():
-  request_data = request.get_json()
-  new_store = {
-    'name': request_data['name'],
-    'items': []
-  }
-  stores.append(new_store)
-  return jsonify(new_store)
-
-@app.route('/store/<string:name>')
-def get_store(name):
-  for store in stores:
-    if store['name'] == name:
-      return jsonify(store)
-  return jsonify({'message': 'store not found'})
-
-@app.route('/stores')
-def get_stores():
-  return jsonify({'stores': stores})
-
-@app.route('/store/<string:name>/item', methods = ['POST'])
-def create_item_in_store(name):
-  request_data = request.get_json()
-  for store in stores:
-    if store['name'] == name:
-      new_item = {
-        'name': request_data['name'],
-        'price': request_data['price']
-      }
-      store['items'].append(new_item)
-      return jsonify(new_item)
-  return jsonify({'message': 'store not found'})
+jwt = JWT(app, authenticate, identity) # /auth
 
 
-@app.route('/store/<string:name>/item')
-def get_items_in_store(name):
-  for store in stores:
-    if store['name'] == name:
-      return jsonify({'item': store['items']})
-  return jsonify({'message': 'store not found'})
+api.add_resource(Item, '/item/<string:name>')
+api.add_resource(ItemList, '/items')
+api.add_resource(UserRegister, '/register')
 
-app.run(port = 5000)
+app.run(port = 5000, debug = True)
