@@ -11,6 +11,11 @@ class Item(Resource):
     required = True,
     help = 'This field is required!!!!!!!!!'
   )
+  parser.add_argument('store_id', 
+    type = int,
+    required = True,
+    help = 'The item needs a store_id'
+  )
 
   @jwt_required()
   def get(self, name):
@@ -25,7 +30,7 @@ class Item(Resource):
 
     data = Item.parser.parse_args()
     
-    item = ItemModel(name, data['price'])
+    item = ItemModel(name, data['price'], data['store_id'])
 
     try:
       item.save_to_db()
@@ -47,12 +52,13 @@ class Item(Resource):
 
     if item is None:
       try:
-        item = ItemModel(name, data['price'])
+        item = ItemModel(name, **data) # ** is unpacking
       except:
         return {'message': 'server error'}, 500
     else:
       try:
         item.price = data['price']
+        item.store_id = data['store_id']
       except:
         return {'message': 'server error'}, 500
     item.save_to_db()
@@ -61,6 +67,6 @@ class Item(Resource):
 
 class ItemList(Resource):
   def get(self):    
-    return {'items': [item.json() for item in ItemModel.query.all()] }, 201
+    return {'items': [item.json() for item in ItemModel.query.all()] }, 200
 
 
