@@ -8,6 +8,8 @@ from resources.user import UserRegister
 from resources.item import Item, ItemList
 
 app = Flask(__name__)
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data.db'
 app.secret_key = 'secret'
 api = Api(app)
 
@@ -18,4 +20,8 @@ api.add_resource(Item, '/item/<string:name>')
 api.add_resource(ItemList, '/items')
 api.add_resource(UserRegister, '/register')
 
-app.run(port = 5000, debug = True)
+if __name__ == '__main__':
+  from db import db # avoid circular import
+  db.init_app(app)
+
+  app.run(port = 5000, debug = True)

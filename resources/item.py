@@ -28,58 +28,39 @@ class Item(Resource):
     item = ItemModel(name, data['price'])
 
     try:
-      item.insert()
+      item.save_to_db()
     except:
       return {'message': 'server error'}, 500
 
-    return item, 201
+    return item.json(), 201
 
   def delete(self, name):
-    connection = sqlite3.connect('data.db')
-    cursor = connection.cursor()
-
-    query = "DELETE FROM items WHERE name = ?"
-    connection.execute(query, (name,))
-
-    connection.commit()
-    connection.close()
-
-    return {'message': 'Item deleted'}
+    item = ItemModel.find_by_name(name)
+    if item:
+      item.delete()
+    return {'message': 'item deleted'}
 
   def put(self, name):
     data = Item.parser.parse_args()
 
     item = ItemModel.find_by_name(name)
-    updated_item = ItemModel(name, data['price'])
 
     if item is None:
       try:
-        updated_item.insert()
+        item = ItemModel(name, data['price'])
       except:
         return {'message': 'server error'}, 500
     else:
       try:
-        updated_item.update()
+        item.price = data['price']
       except:
         return {'message': 'server error'}, 500
-    return updated_item
+    item.save_to_db()
+    return item.json()
 
 
 class ItemList(Resource):
-  def get(self):
-    connection = sqlite3.connect('data.db')
-    cursor = connection.cursor()
-
-    query = "SELECT * FROM items"
-    result = connection.execute(query)
-
-    items = []
-
-    for row in result:
-      items.append({'name': row[0], 'price': row[1]})
-
-    connection.close()
-    
-    return {'items': items}, 201
+  def get(self):    
+    return {'items': [item.json() for item in ItemModel.query.all()] }, 201
 
 
